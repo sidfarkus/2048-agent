@@ -137,6 +137,7 @@ class TwentyFortyEight::Gameboard
   end
 
   def each_horizontal_pair
+    return enum_for(:each_horizontal_pair) unless block_given?
     (0..@size-1).each do |r|
       (0..@size-2).each do |c|
         yield [Tile.new(r,c,get_value(r,c)), Tile.new(r,c+1,get_value(r,c+1))]
@@ -145,6 +146,7 @@ class TwentyFortyEight::Gameboard
   end
 
   def each_vertical_pair
+    return enum_for(:each_vertical_pair) unless block_given?
     (0..@size-1).each do |c|
       (0..@size-2).each do |r|
         yield [Tile.new(r,c,get_value(r,c)), Tile.new(r+1,c,get_value(r+1,c))]
@@ -153,6 +155,7 @@ class TwentyFortyEight::Gameboard
   end
 
   def each_tile
+    return enum_for(:each_tile) unless block_given?
     (0..@size-1).each do |r|
       (0..@size-1).each do |c|
         yield Tile.new(r, c, get_value(r,c))
@@ -161,6 +164,7 @@ class TwentyFortyEight::Gameboard
   end
 
   def each_adjacent_tile r, c
+    return enum_for(:each_adjacent_tile) unless block_given?
     (-1..1).each do |r_d|
       (-1..1).each do |c_d|
         next if r_d == c_d
