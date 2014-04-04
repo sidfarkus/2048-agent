@@ -1,5 +1,6 @@
 module TwentyFortyEight end
 
+$: << File.expand_path('.')
 require 'lib/gameboard'
 require 'lib/local_driver'
 require 'lib/web_game_driver'
