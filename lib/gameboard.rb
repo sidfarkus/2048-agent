@@ -5,6 +5,10 @@ class TwentyFortyEight::Gameboard
     def initialize row, column, value
       @row, @column, @value = row, column, value
     end
+
+    def == other_tile
+      @row == other_tile.row and @column == other_tile.column and @value == other_tile.value
+    end
   end
 
   ValidMoves = [:left, :right, :up, :down].freeze
@@ -136,50 +140,54 @@ class TwentyFortyEight::Gameboard
     true
   end
 
-  def each_horizontal_pair
-    return enum_for(:each_horizontal_pair) unless block_given?
-    (0..@size-1).each do |r|
-      (0..@size-2).each do |c|
-        yield [Tile.new(r,c,get_value(r,c)), Tile.new(r,c+1,get_value(r,c+1))]
+  def horizontal_pairs
+    Enumerator.new do |y|
+      (0..@size-1).each do |r|
+        (0..@size-2).each do |c|
+          y << [Tile.new(r,c,get_value(r,c)), Tile.new(r,c+1,get_value(r,c+1))]
+        end
       end
     end
   end
 
-  def each_vertical_pair
-    return enum_for(:each_vertical_pair) unless block_given?
-    (0..@size-1).each do |c|
-      (0..@size-2).each do |r|
-        yield [Tile.new(r,c,get_value(r,c)), Tile.new(r+1,c,get_value(r+1,c))]
-      end
-    end
-  end
-
-  def each_tile
-    return enum_for(:each_tile) unless block_given?
-    (0..@size-1).each do |r|
+  def vertical_pairs
+    Enumerator.new do |y|
       (0..@size-1).each do |c|
-        yield Tile.new(r, c, get_value(r,c))
+        (0..@size-2).each do |r|
+          y << [Tile.new(r,c,get_value(r,c)), Tile.new(r+1,c,get_value(r+1,c))]
+        end
       end
     end
   end
 
-  def each_adjacent_tile r, c
-    return enum_for(:each_adjacent_tile) unless block_given?
-    (-1..1).each do |r_d|
-      (-1..1).each do |c_d|
-        next if r_d == c_d
-        r_n = r + r_d
-        c_n = c + c_d
-        next if r_n < 0 or c_n < 0
-        next if r_n > (@size-1) or c_n > (@size-1)
-        yield Tile.new r_n, c_n, get_value(r_n, c_n)
+  def tiles
+    Enumerator.new do |y|
+      (0..@size-1).each do |r|
+        (0..@size-1).each do |c|
+          y << Tile.new(r, c, get_value(r,c))
+        end
+      end
+    end
+  end
+
+  def adjacent_tiles r, c
+    Enumerator.new do |y|
+      (-1..1).each do |r_d|
+        (-1..1).each do |c_d|
+          next if r_d == c_d
+          r_n = r + r_d
+          c_n = c + c_d
+          next if r_n < 0 or c_n < 0
+          next if r_n > (@size-1) or c_n > (@size-1)
+          y << Tile.new(r_n, c_n, get_value(r_n, c_n))
+        end
       end
     end
   end
 
   def largest_tile_value
     values = []
-    each_tile do |tile|
+    tiles.each do |tile|
       values << tile.value
     end
     values.compact.max
@@ -261,13 +269,16 @@ class TwentyFortyEight::Gameboard
 
   def left_shift
     (0..@size-1).each do |row|
+      # tiles can't combine more than once in one move
+      combined_cols = []
+
       # find first non-nil element to shift
       (1..@size-1).each do |col|
         next if get_value(row,col).nil?
 
         # shift element to next non-empty square
         new_col = col
-        new_col -= 1 while new_col > 0 and get_value(row, new_col-1).nil?
+        new_col -= 1 while new_col > 0 and get_value(row, new_col - 1).nil?
         
         # possibly set element to new column
         if new_col != col
@@ -275,11 +286,12 @@ class TwentyFortyEight::Gameboard
           set_value row, col, nil
         end
 
-        # if it's equal to its neighbor to the left, square it
-        if (new_col - 1 >= 0) and get_value(row, new_col - 1) == get_value(row, new_col)
+        # if it's equal to its neighbor to the left, double it
+        if (new_col - 1 >= 0) and get_value(row, new_col - 1) == get_value(row, new_col) and not combined_cols.include?(new_col - 1)
           set_value row, new_col - 1, get_value(row, new_col-1)*2
           set_value row, new_col, nil
           @score += get_value row, new_col - 1
+          combined_cols << (new_col - 1)
         end
       end
     end

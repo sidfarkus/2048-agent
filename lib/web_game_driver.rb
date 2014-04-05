@@ -3,7 +3,7 @@ require 'selenium-webdriver'
 class TwentyFortyEight::WebGameDriver
   attr_reader :gameboard, :move_count
 
-  def initialize game_size = 4, delay = 0.5
+  def initialize game_size = 4, delay = 0.25
     @game_size, @delay = game_size, delay
     @driver = Selenium::WebDriver.for :firefox
     reset
@@ -19,7 +19,7 @@ class TwentyFortyEight::WebGameDriver
   end
 
   def send_move direction
-    raise 'InvalidDirectionException' unless [:left, :right, :up, :down].include? direction
+    raise 'InvalidMoveException' unless @gameboard.valid_moves.include? direction
     @gameboard_elt.send_keys direction
     sleep @delay
     @move_count += 1
